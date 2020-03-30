@@ -28,8 +28,8 @@ def remove_worker(conn, host):
     worker_dict = ({'host': host, 'port': 5432})
 
     print("removing %s" % host, file=stderr)
-    cur.execute("""DELETE FROM pg_dist_shard_placement WHERE nodename=%(host)s AND
-                                                             nodeport=%(port)s;
+    cur.execute("""DELETE FROM pg_dist_placement WHERE groupid = (SELECT groupid FROM 
+                   pg_dist_node WHERE nodename = %(host)s AND nodeport = %(port)s LIMIT 1);
                    SELECT master_remove_node(%(host)s, %(port)s)""", worker_dict)
 
 
@@ -64,7 +64,7 @@ def docker_checker():
     this_container = client.containers.get(my_hostname)
     compose_project = this_container.labels['com.docker.compose.project']
 
-    # we only care about worker container health/die events from this cluster
+    # we only care about worker container health/destroy events from this cluster
     print("found compose project: %s" % compose_project, file=stderr)
     filters = {'event': list(actions),
                'label': ["com.docker.compose.project=%s" % compose_project,
